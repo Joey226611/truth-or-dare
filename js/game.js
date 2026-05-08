@@ -1,66 +1,67 @@
 import { auth, db } from "./firebase.js";
-import { onAuthStateChanged } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-import { doc, onSnapshot } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  doc, onSnapshot, updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const lobbyID = localStorage.getItem("lobbyID");
+const username = localStorage.getItem("username");
 
-// UI elements
-const lobbyTitle = document.getElementById("lobbyTitle");
-const lobbyIDText = document.getElementById("lobbyID");
-const playerList = document.getElementById("playerList");
-const gameArea = document.getElementById("gameArea");
+const ref = doc(db,"lobbies",lobbyID);
 
-if(!lobbyID){
-  console.error("Geen lobbyID gevonden 😅");
-}
+let isHost = false;
 
-onAuthStateChanged(auth, (user) => {
-  if(!user){
-    console.log("Nog geen user geladen...");
-    return;
-  }
+// UI
+const playersUI = document.getElementById("players");
+const gameUI = document.getElementById("game");
+const startBtn = document.getElementById("startBtn");
 
-  console.log("User ready:", user.uid);
-  initGame(user);
-});
+const copyBtn = document.getElementById("copyBtn");
+document.getElementById("lobbyIDText").innerText = lobbyID;
 
-function initGame(user){
+// 📋 copy
+copyBtn.onclick = () => {
+  navigator.clipboard.writeText(lobbyID);
+};
 
-  const lobbyRef = doc(db, "lobbies", lobbyID);
+// realtime
+onSnapshot(ref,(snap)=>{
 
-  onSnapshot(lobbyRef, (snap) => {
+  const lobby = snap.data();
 
-    if(!snap.exists()){
-      console.log("Lobby bestaat niet meer");
-      return;
-    }
+  if(!lobby) return;
 
-    const lobby = snap.data();
+  isHost = lobby.host === auth.currentUser.uid;
 
-    // UI basics
-    lobbyTitle.innerText = lobby.name || "Lobby";
-    lobbyIDText.innerText = "Lobby ID: " + lobbyID;
+  document.getElementById("lobbyName").innerText = lobby.name;
 
-    // spelers tonen
-    playerList.innerHTML = "";
-
-    if(lobby.players && lobby.players.length > 0){
-      lobby.players.forEach(p => {
-        const li = document.createElement("li");
-        li.textContent = p.username + (p.uid === user.uid ? " (jij)" : "");
-        playerList.appendChild(li);
-      });
-    }
-
-    // game area tonen zodra lobby bestaat
-    gameArea.style.display = "block";
-
-    // debug log
-    console.log("Lobby update:", lobby);
-
+  // players
+  playersUI.innerHTML="";
+  lobby.players.forEach(p=>{
+    const li=document.createElement("li");
+    li.textContent=p.username + (p.uid===auth.currentUser.uid?" (jij)":"");
+    playersUI.appendChild(li);
   });
 
-}
+  // host only
+  startBtn.style.display = isHost ? "block" : "none";
+
+  // game state
+  if(lobby.status === "playing"){
+    gameUI.style.display="block";
+    startBtn.style.display="none";
+
+    const current = lobby.players[lobby.turnIndex];
+    document.getElementById("turn").innerText =
+      current.username + " is aan de beurt!";
+  } else {
+    gameUI.style.display="none";
+  }
+
+});
+
+// ▶ start game
+startBtn.onclick = async () => {
+  await updateDoc(ref,{
+    status:"playing"
+  });
+};
