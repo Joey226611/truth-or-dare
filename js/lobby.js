@@ -30,7 +30,7 @@ document.getElementById("createLobby").onclick = async () => {
         status: "waiting",
         turnIndex: 0,
         players: [
-            { uid: user.uid, username: user.email.split("@")[0] }
+            { username: localStorage.getItem("username") }
         ]
     });
 
