@@ -1,63 +1,129 @@
 import { auth, db } from "./firebase.js";
-import { collection, doc, setDoc, getDoc, updateDoc, arrayUnion } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  arrayUnion
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-function generateLobbyID() {
-    return Math.random().toString(36).substring(2,8).toUpperCase();
+function generateLobbyID(){
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
+// UI
 const status = document.getElementById("status");
 
-document.getElementById("createLobby").onclick = async () => {
-    const user = auth.currentUser;
-    if(!user) return;
+const lobbyNameInput = document.getElementById("lobbyName");
+const maxPlayersInput = document.getElementById("maxPlayers");
+const roundsInput = document.getElementById("rounds");
 
-    const lobbyID = generateLobbyID();
-    const name = document.getElementById("lobbyName").value;
-    const maxPlayers = Number(document.getElementById("maxPlayers").value);
-    const rounds = Number(document.getElementById("rounds").value);
+const lobbyIdInput = document.getElementById("lobbyIdInput");
 
-    if(maxPlayers < 2) {
-        status.innerText = "Minimaal 2 spelers!";
-        return;
-    }
+const createBtn = document.getElementById("createLobby");
+const joinBtn = document.getElementById("joinLobby");
 
-    await setDoc(doc(db, "lobbies", lobbyID), {
-        name,
-        host: user.uid,
-        maxPlayers,
-        roundCount: rounds,
-        status: "waiting",
-        turnIndex: 0,
-        players: [
-            { username: localStorage.getItem("username") }
-        ]
-    });
+// safety check
+const username = localStorage.getItem("username");
 
-    localStorage.setItem("lobbyID", lobbyID);
+if(!username){
+  console.warn("Geen username gevonden");
+}
+
+// 🔥 CREATE LOBBY
+createBtn.onclick = async () => {
+  const user = auth.currentUser;
+
+  if(!user){
+    status.innerText = "Nog niet ingelogd...";
+    return;
+  }
+
+  const name = lobbyNameInput.value.trim();
+  const maxPlayers = Number(maxPlayersInput.value);
+  const rounds = Number(roundsInput.value);
+
+  if(!name){
+    status.innerText = "Geef een lobby naam!";
+    return;
+  }
+
+  if(maxPlayers < 2){
+    status.innerText = "Minimaal 2 spelers!";
+    return;
+  }
+
+  const lobbyID = generateLobbyID();
+
+  await setDoc(doc(db, "lobbies", lobbyID), {
+    name,
+    host: user.uid,
+    maxPlayers,
+    roundCount: rounds,
+    status: "waiting",
+    turnIndex: 0,
+    players: [
+      {
+        uid: user.uid,
+        username: username || "Player"
+      }
+    ],
+    createdAt: Date.now()
+  });
+
+  localStorage.setItem("lobbyID", lobbyID);
+
+  status.innerText = "Lobby aangemaakt! 🚀";
+
+  setTimeout(() => {
     location.href = "room.html";
+  }, 500);
 };
 
-document.getElementById("joinLobby").onclick = async () => {
-    const lobbyID = document.getElementById("lobbyIdInput").value.toUpperCase();
-    const user = auth.currentUser;
-    if(!user) return;
+// 🔥 JOIN LOBBY
+joinBtn.onclick = async () => {
 
-    const lobbyRef = doc(db, "lobbies", lobbyID);
-    const lobbySnap = await getDoc(lobbyRef);
+  const user = auth.currentUser;
 
-    if(!lobbySnap.exists()) {
-        status.innerText = "Lobby bestaat niet!";
-        return;
-    }
+  if(!user){
+    status.innerText = "Nog niet ingelogd...";
+    return;
+  }
 
-    await updateDoc(lobbyRef, {
-        players: arrayUnion({
-            uid: user.uid,
-            username: user.email.split("@")[0]
-        })
-    });
+  const lobbyID = lobbyIdInput.value.trim().toUpperCase();
 
-    localStorage.setItem("lobbyID", lobbyID);
+  if(!lobbyID){
+    status.innerText = "Vul een Lobby ID in!";
+    return;
+  }
+
+  const lobbyRef = doc(db, "lobbies", lobbyID);
+  const snap = await getDoc(lobbyRef);
+
+  if(!snap.exists()){
+    status.innerText = "Lobby bestaat niet!";
+    return;
+  }
+
+  const lobby = snap.data();
+
+  if(lobby.players.length >= lobby.maxPlayers){
+    status.innerText = "Lobby is vol!";
+    return;
+  }
+
+  await updateDoc(lobbyRef, {
+    players: arrayUnion({
+      uid: user.uid,
+      username: username || "Player"
+    })
+  });
+
+  localStorage.setItem("lobbyID", lobbyID);
+
+  status.innerText = "Joined lobby! 🎮";
+
+  setTimeout(() => {
     location.href = "room.html";
+  }, 500);
 };
