@@ -1,36 +1,37 @@
-import { auth } from "./firebase.js";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { auth, db } from "./firebase.js";
+import { signInAnonymously, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, setDoc }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const username = document.getElementById("email");
-const password = document.getElementById("password");
+const usernameInput = document.getElementById("username");
+const startBtn = document.getElementById("startGame");
 const status = document.getElementById("status");
 
-// echte email maken van username
-function makeEmail(name){
-  return name.replace(/\s/g,"").toLowerCase() + "@doenofwaarheid.app";
-}
+startBtn.onclick = async () => {
+  const username = usernameInput.value.trim();
 
-document.getElementById("register").onclick = async () => {
-  try {
-    const email = makeEmail(username.value);
-    await createUserWithEmailAndPassword(auth, email, password.value);
-    location.href = "lobby.html";
-  } catch(e) {
-    status.innerText = e.message;
-    console.error(e);
+  if(username.length < 2){
+    status.innerText = "Minimaal 2 letters!";
+    return;
   }
+
+  status.innerText = "Account maken...";
+
+  const cred = await signInAnonymously(auth);
+  const uid = cred.user.uid;
+
+  // username opslaan in database
+  await setDoc(doc(db, "users", uid), {
+    username: username
+  });
+
+  localStorage.setItem("username", username);
+  location.href = "lobby.html";
 };
 
-document.getElementById("login").onclick = async () => {
-  try {
-    const email = makeEmail(username.value);
-    await signInWithEmailAndPassword(auth, email, password.value);
+onAuthStateChanged(auth, user => {
+  if(user){
     location.href = "lobby.html";
-  } catch(e) {
-    status.innerText = e.message;
-    console.error(e);
   }
-};
+});
