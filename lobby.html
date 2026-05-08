@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lobby</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="card">
+    <h1>🎮 Lobby</h1>
+
+    <input id="lobbyName" placeholder="Lobby naam">
+    <input id="maxPlayers" type="number" placeholder="Max spelers (2+)" min="2">
+    <input id="rounds" type="number" placeholder="Aantal rondes" min="1">
+
+    <button id="createLobby">Lobby maken</button>
+
+    <hr>
+
+    <input id="lobbyIdInput" placeholder="Lobby ID">
+    <button id="joinLobby">Join lobby</button>
+
+    <p id="status"></p>
+</div>
+
+<script type="module" src="js/lobby.js"></script>
+</body>
+</html>
