@@ -1,159 +1,66 @@
 import { auth, db } from "./firebase.js";
-import { doc, onSnapshot, updateDoc } 
+import { onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import { doc, onSnapshot } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { truthQuestions } from "./questions.js";
 
 const lobbyID = localStorage.getItem("lobbyID");
-const lobbyRef = doc(db, "lobbies", lobbyID);
-const myUID = auth.currentUser.uid;
 
-const truthBtn = document.getElementById("truthBtn");
-const dareBtn = document.getElementById("dareBtn");
-const questionArea = document.getElementById("questionArea");
+// UI elements
+const lobbyTitle = document.getElementById("lobbyTitle");
+const lobbyIDText = document.getElementById("lobbyID");
+const playerList = document.getElementById("playerList");
+const gameArea = document.getElementById("gameArea");
 
-function randomQuestions(){
-    return truthQuestions.sort(()=>0.5-Math.random()).slice(0,2);
+if(!lobbyID){
+  console.error("Geen lobbyID gevonden 😅");
 }
 
-onSnapshot(lobbyRef, async (docSnap) => {
-    const lobby = docSnap.data();
-    const game = lobby.gameState;
+onAuthStateChanged(auth, (user) => {
+  if(!user){
+    console.log("Nog geen user geladen...");
+    return;
+  }
 
-    // speler lijst
-    const list = document.getElementById("playerList");
-    list.innerHTML="";
-    lobby.players.forEach(p => list.innerHTML += `<li>${p.username}</li>`);
-
-    // start game
-    if(lobby.status==="playing" && !game){
-        await updateDoc(lobbyRef,{
-            gameState:{
-                phase:"choose",
-                currentPlayer:lobby.players[0].uid
-            }
-        });
-        return;
-    }
-
-    if(!game) return;
-
-    const currentPlayer = lobby.players.find(p=>p.uid===game.currentPlayer);
-    document.getElementById("turnPlayer").innerText =
-      currentPlayer.username + " is aan de beurt!";
-
-    // PHASE 1 — speler kiest waarheid
-    if(game.phase==="choose"){
-        questionArea.innerHTML="";
-        if(game.currentPlayer===myUID){
-            truthBtn.style.display="block";
-            dareBtn.style.display="block";
-        } else {
-            truthBtn.style.display="none";
-            dareBtn.style.display="none";
-            questionArea.innerHTML="<p>Wachten tot speler kiest...</p>";
-        }
-    }
-
-    // PHASE 2 — andere speler kiest vraag
-    if(game.phase==="pickQuestion"){
-        truthBtn.style.display="none";
-        dareBtn.style.display="none";
-
-        if(game.askedBy===myUID){
-            const [q1,q2] = randomQuestions();
-
-            questionArea.innerHTML=`
-                <h3>Kies een vraag</h3>
-                <button class="qbtn">${q1}</button>
-                <button class="qbtn">${q2}</button>
-                <input id="customQ" placeholder="Eigen vraag">
-                <button id="sendCustom">Verstuur eigen vraag</button>
-            `;
-
-            document.querySelectorAll(".qbtn").forEach(btn=>{
-                btn.onclick=()=>sendQuestion(btn.innerText);
-            });
-
-            document.getElementById("sendCustom").onclick=()=>{
-                sendQuestion(document.getElementById("customQ").value);
-            }
-        } else {
-            questionArea.innerHTML="<p>Andere speler kiest vraag...</p>";
-        }
-    }
-
-    // PHASE 3 — speler antwoord
-    if(game.phase==="answering"){
-        if(game.currentPlayer===myUID){
-            questionArea.innerHTML=`
-                <h3>${game.question}</h3>
-                <input id="answerInput" placeholder="Typ je antwoord">
-                <button id="sendAnswer">Verstuur antwoord</button>
-            `;
-            document.getElementById("sendAnswer").onclick=sendAnswer;
-        } else {
-            questionArea.innerHTML="<p>Speler is aan het antwoorden...</p>";
-        }
-    }
-
-    // PHASE 4 — antwoord tonen + next turn
-    if(game.phase==="showAnswer"){
-        questionArea.innerHTML=`
-            <h3>Vraag:</h3>
-            <p>${game.question}</p>
-            <h3>Antwoord:</h3>
-            <p>${game.answer}</p>
-            <button id="nextTurn">Volgende beurt</button>
-        `;
-
-        document.getElementById("nextTurn").onclick=nextTurn;
-    }
+  console.log("User ready:", user.uid);
+  initGame(user);
 });
 
-truthBtn.onclick = async () => {
-    const lobbySnap = await lobbyRef.get();
-};
+function initGame(user){
 
-truthBtn.onclick = async () => {
-    const lobbySnap = await lobbyRef;
-    const data = (await lobbyRef.get()).data();
+  const lobbyRef = doc(db, "lobbies", lobbyID);
 
-    const other = data.players.find(p=>p.uid!==myUID);
+  onSnapshot(lobbyRef, (snap) => {
 
-    await updateDoc(lobbyRef,{
-        gameState:{
-            phase:"pickQuestion",
-            mode:"truth",
-            currentPlayer:myUID,
-            askedBy:other.uid
-        }
-    });
-};
+    if(!snap.exists()){
+      console.log("Lobby bestaat niet meer");
+      return;
+    }
 
-async function sendQuestion(q){
-    await updateDoc(lobbyRef,{
-        "gameState.phase":"answering",
-        "gameState.question":q
-    });
-}
-
-async function sendAnswer(){
-    const ans = document.getElementById("answerInput").value;
-    await updateDoc(lobbyRef,{
-        "gameState.phase":"showAnswer",
-        "gameState.answer":ans
-    });
-}
-
-async function nextTurn(){
-    const snap = await lobbyRef.get();
     const lobby = snap.data();
 
-    let nextIndex = (lobby.turnIndex+1) % lobby.players.length;
+    // UI basics
+    lobbyTitle.innerText = lobby.name || "Lobby";
+    lobbyIDText.innerText = "Lobby ID: " + lobbyID;
 
-    await updateDoc(lobbyRef,{
-        turnIndex:nextIndex,
-        "gameState.phase":"choose",
-        "gameState.currentPlayer":lobby.players[nextIndex].uid
-    });
+    // spelers tonen
+    playerList.innerHTML = "";
+
+    if(lobby.players && lobby.players.length > 0){
+      lobby.players.forEach(p => {
+        const li = document.createElement("li");
+        li.textContent = p.username + (p.uid === user.uid ? " (jij)" : "");
+        playerList.appendChild(li);
+      });
+    }
+
+    // game area tonen zodra lobby bestaat
+    gameArea.style.display = "block";
+
+    // debug log
+    console.log("Lobby update:", lobby);
+
+  });
+
 }
