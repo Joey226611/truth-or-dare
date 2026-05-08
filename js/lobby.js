@@ -1,104 +1,55 @@
 import { auth, db } from "./firebase.js";
 import {
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  arrayUnion
+  doc, setDoc, getDoc, updateDoc, arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-function generateLobbyID(){
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
+function id(){
+  return Math.random().toString(36).substring(2,8).toUpperCase();
 }
 
-// UI
 const status = document.getElementById("status");
-
-const lobbyNameInput = document.getElementById("lobbyName");
-const maxPlayersInput = document.getElementById("maxPlayers");
-const roundsInput = document.getElementById("rounds");
-
-const lobbyIdInput = document.getElementById("lobbyIdInput");
-
-const createBtn = document.getElementById("createLobby");
-const joinBtn = document.getElementById("joinLobby");
-
-// safety check
 const username = localStorage.getItem("username");
 
 if(!username){
-  console.warn("Geen username gevonden");
+  location.href = "index.html";
 }
 
-// 🔥 CREATE LOBBY
-createBtn.onclick = async () => {
+// 🎮 CREATE
+document.getElementById("createLobby").onclick = async () => {
+
   const user = auth.currentUser;
+  const name = document.getElementById("lobbyName").value;
+  const max = Number(document.getElementById("maxPlayers").value);
 
-  if(!user){
-    status.innerText = "Nog niet ingelogd...";
-    return;
-  }
+  if(!user) return;
 
-  const name = lobbyNameInput.value.trim();
-  const maxPlayers = Number(maxPlayersInput.value);
-  const rounds = Number(roundsInput.value);
+  const lobbyID = id();
 
-  if(!name){
-    status.innerText = "Geef een lobby naam!";
-    return;
-  }
-
-  if(maxPlayers < 2){
-    status.innerText = "Minimaal 2 spelers!";
-    return;
-  }
-
-  const lobbyID = generateLobbyID();
-
-  await setDoc(doc(db, "lobbies", lobbyID), {
+  await setDoc(doc(db,"lobbies",lobbyID),{
     name,
-    host: user.uid,
-    maxPlayers,
-    roundCount: rounds,
-    status: "waiting",
-    turnIndex: 0,
-    players: [
-      {
-        uid: user.uid,
-        username: username || "Player"
-      }
+    host:user.uid,
+    maxPlayers:max,
+    status:"waiting",
+    players:[
+      {uid:user.uid, username}
     ],
-    createdAt: Date.now()
+    turnIndex:0
   });
 
   localStorage.setItem("lobbyID", lobbyID);
-
-  status.innerText = "Lobby aangemaakt! 🚀";
-
-  setTimeout(() => {
-    location.href = "room.html";
-  }, 500);
+  location.href="room.html";
 };
 
-// 🔥 JOIN LOBBY
-joinBtn.onclick = async () => {
+// 🎮 JOIN
+document.getElementById("joinLobby").onclick = async () => {
 
   const user = auth.currentUser;
+  const lobbyID = document.getElementById("lobbyIdInput").value.toUpperCase();
 
-  if(!user){
-    status.innerText = "Nog niet ingelogd...";
-    return;
-  }
+  if(!user) return;
 
-  const lobbyID = lobbyIdInput.value.trim().toUpperCase();
-
-  if(!lobbyID){
-    status.innerText = "Vul een Lobby ID in!";
-    return;
-  }
-
-  const lobbyRef = doc(db, "lobbies", lobbyID);
-  const snap = await getDoc(lobbyRef);
+  const ref = doc(db,"lobbies",lobbyID);
+  const snap = await getDoc(ref);
 
   if(!snap.exists()){
     status.innerText = "Lobby bestaat niet!";
@@ -107,23 +58,23 @@ joinBtn.onclick = async () => {
 
   const lobby = snap.data();
 
+  if(lobby.status === "playing"){
+    status.innerText = "Game is al gestart!";
+    return;
+  }
+
   if(lobby.players.length >= lobby.maxPlayers){
     status.innerText = "Lobby is vol!";
     return;
   }
 
-  await updateDoc(lobbyRef, {
+  await updateDoc(ref,{
     players: arrayUnion({
-      uid: user.uid,
-      username: username || "Player"
+      uid:user.uid,
+      username
     })
   });
 
   localStorage.setItem("lobbyID", lobbyID);
-
-  status.innerText = "Joined lobby! 🎮";
-
-  setTimeout(() => {
-    location.href = "room.html";
-  }, 500);
+  location.href="room.html";
 };
