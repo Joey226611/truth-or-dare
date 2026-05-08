@@ -2,28 +2,33 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Game Room</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="card">
-    <h2 id="lobbyTitle">Lobby</h2>
-    <p id="lobbyID"></p>
 
-    <h3>Spelers:</h3>
-    <ul id="playerList"></ul>
+  <div class="topbar">
+    <span id="lobbyIDText"></span>
+    <button id="copyBtn">📋 Copy</button>
+  </div>
 
-    <button id="startGame">Start spel</button>
+  <h2 id="lobbyName"></h2>
 
-    <div id="gameArea" style="display:none">
-        <h2 id="turnPlayer"></h2>
-        <button id="truthBtn">Waarheid</button>
-        <button id="dareBtn">Doen</button>
+  <ul id="players"></ul>
 
-        <div id="questionArea"></div>
-    </div>
+  <button id="startBtn">Start Game</button>
+
+  <div id="game" style="display:none">
+
+    <h2 id="turn"></h2>
+
+    <button id="truth">Waarheid</button>
+    <button id="dare">Doen</button>
+
+  </div>
+
 </div>
 
 <script type="module" src="js/game.js"></script>
