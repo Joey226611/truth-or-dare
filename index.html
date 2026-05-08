@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Doen of Waarheid</title>
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doen of Waarheid</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:,">
 </head>
-<body>
 
-<div class="card">
-    <h1>🎉 Doen of Waarheid</h1>
+<body class="login-body">
 
-    <input id="email" placeholder="Gebruikersnaam">
-    <input id="password" type="password" placeholder="Wachtwoord">
+  <div class="card">
+      <h1>🎮 Doen of Waarheid</h1>
+      <p class="subtitle">Multiplayer party game</p>
 
-    <button id="register">Account maken</button>
-    <button id="login">Inloggen</button>
+      <input id="username" placeholder="Kies een username">
+      <button id="startGame">Start spel</button>
+      <p id="status"></p>
 
-    <p id="status"></p>
-</div>
+      <div class="footer">
+        Camera en microfoon kunnen later gevraagd worden voor opdrachten 📷🎤
+      </div>
+  </div>
 
-<script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/auth.js"></script>
 </body>
 </html>
