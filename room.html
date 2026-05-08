@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Room</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="card">
+    <h2 id="lobbyTitle">Lobby</h2>
+    <p id="lobbyID"></p>
+
+    <h3>Spelers:</h3>
+    <ul id="playerList"></ul>
+
+    <button id="startGame">Start spel</button>
+
+    <div id="gameArea" style="display:none">
+        <h2 id="turnPlayer"></h2>
+        <button id="truthBtn">Waarheid</button>
+        <button id="dareBtn">Doen</button>
+
+        <div id="questionArea"></div>
+    </div>
+</div>
+
+<script type="module" src="js/game.js"></script>
+</body>
+</html>
