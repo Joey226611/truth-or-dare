@@ -1,39 +1,15 @@
-import { auth, db } from "./firebase.js";
-import { signInAnonymously } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, setDoc } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { ensureLogin } from "./firebase.js";
 
-window.addEventListener("DOMContentLoaded", () => {
+const usernameInput = document.getElementById("username");
+const startBtn = document.getElementById("startBtn");
 
-  const usernameInput = document.getElementById("username");
-  const startBtn = document.getElementById("startGame");
-  const status = document.getElementById("status");
+startBtn.onclick = async () => {
 
-  if(!startBtn){
-    console.error("startGame button niet gevonden in HTML 😅");
-    return;
-  }
+  const username = usernameInput.value.trim();
+  if(username.length < 2) return alert("Username te kort");
 
-  startBtn.onclick = async () => {
-    const username = usernameInput.value.trim();
+  localStorage.setItem("username", username);
+  await ensureLogin();
 
-    if(username.length < 2){
-      status.innerText = "Minimaal 2 letters!";
-      return;
-    }
-
-    status.innerText = "Account maken...";
-
-    const cred = await signInAnonymously(auth);
-    const uid = cred.user.uid;
-
-    await setDoc(doc(db, "users", uid), {
-      username: username
-    });
-
-    localStorage.setItem("username", username);
-    location.href = "lobby.html";
-  };
-
-});
+  location.href = "lobby.html";
+};
