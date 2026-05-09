@@ -1,31 +1,38 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<title>Game Room</title>
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <title>Game Room</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div class="card">
+<div class="roomGrid">
 
-  <div class="topbar">
-    <span id="lobbyIDText"></span>
-    <button id="copyBtn">📋 Copy</button>
+  <div class="card">
+    <h2>Spelers</h2>
+    <ul id="players"></ul>
+    <button id="startBtn" class="primary">Start spel</button>
   </div>
 
-  <h2 id="lobbyName"></h2>
+  <div id="game" class="card gameCard" style="display:none">
 
-  <ul id="players"></ul>
+    <h2>Beurt</h2>
 
-  <button id="startBtn">Start Game</button>
+    <div class="choiceButtons">
+      <button id="truth" class="truthBtn">Waarheid</button>
+      <button id="dare" class="dareBtn">Doen</button>
+    </div>
 
-  <div id="game" style="display:none">
+    <div id="truthArea">
+      <button id="random1"></button>
+      <button id="random2"></button>
 
-    <h2 id="turn"></h2>
+      <input id="answerInput" placeholder="Typ antwoord">
+      <button id="sendAnswer">Verstuur</button>
 
-    <button id="truth">Waarheid</button>
-    <button id="dare">Doen</button>
+      <button id="continueBtn">Volgende beurt</button>
+    </div>
 
   </div>
 
