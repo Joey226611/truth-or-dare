@@ -1,113 +1,137 @@
-import { ensureLogin, auth, db } from "./firebase.js";
+// 🔥 Firebase init (zelfde config gebruiken als andere files)
+import { db, auth } from "./firebase.js";
 import {
-  doc, onSnapshot, updateDoc
+  doc,
+  onSnapshot,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-await ensureLogin();
+const lobbyId = localStorage.getItem("lobbyId");
+const lobbyRef = doc(db, "lobbies", lobbyId);
 
-const lobbyID = localStorage.getItem("lobbyID");
-if(!lobbyID) location.href="lobby.html";
+let myUid = null;
 
-const ref = doc(db,"lobbies",lobbyID);
+// UI elementen
+const statusText = document.getElementById("status");
+const truthBtn = document.getElementById("truthBtn");
+const dareBtn = document.getElementById("dareBtn");
+const inputBox = document.getElementById("inputBox");
+const sendBtn = document.getElementById("sendBtn");
 
-const TRUTH = [
- "Wat is je grootste geheim?",
- "Wie vind je leuk?",
- "Wat is je grootste angst?",
- "Wat is je meest gênante moment?"
-];
+function hideAllUI() {
+  truthBtn.style.display = "none";
+  dareBtn.style.display = "none";
+  inputBox.style.display = "none";
+  sendBtn.style.display = "none";
+}
 
-const playersUI = document.getElementById("players");
-const gameUI = document.getElementById("game");
-const startBtn = document.getElementById("startBtn");
+function showStatus(text) {
+  statusText.innerText = text;
+}
 
-let lobbyData;
-
-// REALTIME LISTENER
-onSnapshot(ref,(snap)=>{
-  if(!snap.exists()) return location.href="lobby.html";
-
-  lobbyData = snap.data();
-  renderLobby();
-  renderGame();
+auth.onAuthStateChanged(user => {
+  if (!user) return;
+  myUid = user.uid;
+  listenLobby();
 });
 
-function renderLobby(){
+function listenLobby() {
+  onSnapshot(lobbyRef, async (snap) => {
+    const data = snap.data();
+    if (!data) return;
 
-  playersUI.innerHTML="";
-  lobbyData.players.forEach(p=>{
-    const li=document.createElement("li");
-    li.textContent=p.username;
-    playersUI.appendChild(li);
-  });
+    const myTurn = data.turn === myUid;
+    hideAllUI();
 
-  startBtn.style.display =
-    lobbyData.host === auth.currentUser.uid ? "block":"none";
-}
+    // GAME NOT STARTED
+    if (!data.gameStarted) {
+      showStatus("Waiting for host to start game...");
+      return;
+    }
 
-// HOST START GAME
-startBtn.onclick = ()=> updateDoc(ref,{
-  status:"playing",
-  "gameState.phase":"choose"
-});
+    // PHASE: CHOOSE TRUTH OR DARE
+    if (data.phase === "choose") {
+      if (myTurn) {
+        showStatus("Your turn! Choose Truth or Dare");
+        truthBtn.style.display = "block";
+        dareBtn.style.display = "block";
+      } else {
+        showStatus("Opponent is choosing...");
+      }
+    }
 
-// GAME RENDER
-function renderGame(){
+    // PHASE: OTHER PLAYER WRITES QUESTION
+    if (data.phase === "writeQuestion") {
+      if (!myTurn) {
+        showStatus("Write the question/opdracht");
+        inputBox.style.display = "block";
+        sendBtn.style.display = "block";
+        inputBox.placeholder = "Type question...";
+      } else {
+        showStatus("Opponent is writing...");
+      }
+    }
 
-  if(lobbyData.status !== "playing") return;
-
-  gameUI.style.display="block";
-
-  const phase = lobbyData.gameState.phase;
-
-  if(phase==="choose") showChoose();
-  if(phase==="truth_pick") showPick();
-  if(phase==="truth_answer") showAnswer();
-  if(phase==="truth_result") showResult();
-}
-
-// WAARHEID KLIK
-document.getElementById("truth").onclick=()=>{
-  updateDoc(ref,{ "gameState.phase":"truth_pick" });
-};
-
-function showChoose(){}
-
-function showPick(){
-
-  const q1 = TRUTH[Math.floor(Math.random()*TRUTH.length)];
-  const q2 = TRUTH[Math.floor(Math.random()*TRUTH.length)];
-
-  random1.innerText=q1;
-  random2.innerText=q2;
-
-  random1.onclick=()=>sendQuestion(q1);
-  random2.onclick=()=>sendQuestion(q2);
-}
-
-function sendQuestion(q){
-  updateDoc(ref,{
-    "gameState.phase":"truth_answer",
-    "gameState.currentQuestion":q
+    // PHASE: PLAYER ANSWERS
+    if (data.phase === "answer") {
+      if (myTurn) {
+        showStatus("Answer now!");
+        inputBox.style.display = "block";
+        sendBtn.style.display = "block";
+        inputBox.placeholder = "Type your answer...";
+      } else {
+        showStatus("Opponent is answering...");
+      }
+    }
   });
 }
 
-sendAnswer.onclick=()=>{
-  updateDoc(ref,{
-    "gameState.phase":"truth_result",
-    "gameState.currentAnswer":answerInput.value
+
+// 🎯 TRUTH / DARE CLICK
+truthBtn.onclick = async () => {
+  await updateDoc(lobbyRef, {
+    choice: "truth",
+    phase: "writeQuestion"
   });
 };
 
-continueBtn.onclick=()=>{
-
-  let next=lobbyData.turnIndex+1;
-  if(next>=lobbyData.players.length) next=0;
-
-  updateDoc(ref,{
-    turnIndex:next,
-    "gameState.phase":"choose",
-    "gameState.currentAnswer":"",
-    "gameState.currentQuestion":""
+dareBtn.onclick = async () => {
+  await updateDoc(lobbyRef, {
+    choice: "dare",
+    phase: "writeQuestion"
   });
+};
+
+
+// ✍️ SEND QUESTION OR ANSWER
+sendBtn.onclick = async () => {
+  const text = inputBox.value.trim();
+  if (!text) return;
+
+  const snap = await lobbyRef.get();
+  const data = snap.data();
+
+  const otherPlayer = data.players.find(p => p !== myUid);
+
+  // If writing question
+  if (data.phase === "writeQuestion") {
+    await updateDoc(lobbyRef, {
+      question: text,
+      phase: "answer"
+    });
+  }
+
+  // If answering
+  else if (data.phase === "answer") {
+    await updateDoc(lobbyRef, {
+      answer: text,
+      turn: otherPlayer,
+      phase: "choose",
+      question: "",
+      answer: "",
+      choice: null
+    });
+  }
+
+  inputBox.value = "";
 };
