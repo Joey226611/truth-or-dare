@@ -1,27 +1,26 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<title>Lobby</title>
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <title>Lobby</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div class="card">
+<div class="container">
 
-  <h1>🎮 Lobby</h1>
+  <div class="card">
+    <h2>Lobby maken</h2>
+    <input id="lobbyName" placeholder="Lobby naam">
+    <input id="maxPlayers" type="number" value="4">
+    <button id="createLobby" class="primary">Maak lobby</button>
+  </div>
 
-  <input id="lobbyName" placeholder="Lobby naam">
-  <input id="maxPlayers" type="number" placeholder="Max spelers (2+)">
-
-  <button id="createLobby">Create Lobby</button>
-
-  <hr>
-
-  <input id="lobbyIdInput" placeholder="Lobby ID">
-  <button id="joinLobby">Join Lobby</button>
-
-  <p id="status"></p>
+  <div class="card">
+    <h2>Lobby joinen</h2>
+    <input id="lobbyIdInput" placeholder="Lobby ID">
+    <button id="joinLobby" class="secondary">Join lobby</button>
+  </div>
 
 </div>
 
