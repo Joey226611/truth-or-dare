@@ -1,7 +1,8 @@
-// Firebase imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDbe2tlgFAK6RN9IWup89xRYPfla-xYcD0",
@@ -13,6 +14,16 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// auto login
+export async function ensureLogin(){
+  return new Promise((resolve)=>{
+    onAuthStateChanged(auth, async (user)=>{
+      if(user) return resolve(user);
+      const cred = await signInAnonymously(auth);
+      resolve(cred.user);
+    });
+  });
+}
