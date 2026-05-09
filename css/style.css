@@ -1,39 +1,108 @@
-body {
-    margin:0;
-    font-family: Arial, Helvetica, sans-serif;
-    background: linear-gradient(135deg,#6dd5fa,#ff758c);
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+/* achtergrond */
+body{
+  margin:0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg,#6a8cff,#ff7bd5);
+  min-height:100vh;
+  color:white;
 }
 
-.card {
-    background:white;
-    padding:30px;
-    border-radius:20px;
-    width:320px;
-    text-align:center;
-    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+/* centreren */
+.centerPage{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
 
-input {
-    width:100%;
-    padding:12px;
-    margin:8px 0;
-    border-radius:10px;
-    border:none;
-    background:#f0f0f0;
+.container{
+  display:flex;
+  gap:30px;
+  justify-content:center;
+  margin-top:80px;
+  flex-wrap:wrap;
 }
 
-button {
-    width:100%;
-    padding:12px;
-    margin-top:10px;
-    border:none;
-    border-radius:12px;
-    background:#ff4d6d;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
+/* kaarten */
+.card{
+  background:rgba(255,255,255,0.15);
+  backdrop-filter: blur(15px);
+  border-radius:25px;
+  padding:30px;
+  box-shadow:0 15px 35px rgba(0,0,0,0.25);
+  text-align:center;
+  min-width:260px;
+}
+
+.big{ transform:scale(1.2); }
+
+/* inputs */
+input{
+  width:100%;
+  padding:14px;
+  margin:10px 0;
+  border:none;
+  border-radius:15px;
+  font-size:16px;
+}
+
+/* knoppen */
+button{
+  padding:14px 20px;
+  border:none;
+  border-radius:18px;
+  font-size:16px;
+  cursor:pointer;
+  margin-top:10px;
+  transition:0.2s;
+}
+
+button:hover{
+  transform:scale(1.07);
+}
+
+/* knop kleuren */
+.primary{ background:#00e1ff; color:black; }
+.secondary{ background:#ffcc00; color:black; }
+.truthBtn{ background:#4cff6a; color:black; }
+.dareBtn{ background:#ff5757; }
+
+/* room layout */
+.roomGrid{
+  display:grid;
+  grid-template-columns:300px 1fr;
+  gap:25px;
+  padding:30px;
+}
+
+/* spelers lijst */
+ul{
+  list-style:none;
+  padding:0;
+}
+
+li{
+  background:rgba(0,0,0,0.2);
+  margin:6px 0;
+  padding:8px;
+  border-radius:10px;
+}
+
+/* game */
+.choiceButtons{
+  display:flex;
+  gap:20px;
+  justify-content:center;
+  margin-bottom:20px;
+}
+
+.gameCard{
+  min-height:400px;
+}
+
+/* mobiel */
+@media(max-width:800px){
+  .roomGrid{
+    grid-template-columns:1fr;
+  }
 }
