@@ -1,67 +1,113 @@
-import { auth, db } from "./firebase.js";
+import { ensureLogin, auth, db } from "./firebase.js";
 import {
   doc, onSnapshot, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+await ensureLogin();
+
 const lobbyID = localStorage.getItem("lobbyID");
-const username = localStorage.getItem("username");
+if(!lobbyID) location.href="lobby.html";
 
 const ref = doc(db,"lobbies",lobbyID);
 
-let isHost = false;
+const TRUTH = [
+ "Wat is je grootste geheim?",
+ "Wie vind je leuk?",
+ "Wat is je grootste angst?",
+ "Wat is je meest gênante moment?"
+];
 
-// UI
 const playersUI = document.getElementById("players");
 const gameUI = document.getElementById("game");
 const startBtn = document.getElementById("startBtn");
 
-const copyBtn = document.getElementById("copyBtn");
-document.getElementById("lobbyIDText").innerText = lobbyID;
+let lobbyData;
 
-// 📋 copy
-copyBtn.onclick = () => {
-  navigator.clipboard.writeText(lobbyID);
-};
-
-// realtime
+// REALTIME LISTENER
 onSnapshot(ref,(snap)=>{
+  if(!snap.exists()) return location.href="lobby.html";
 
-  const lobby = snap.data();
+  lobbyData = snap.data();
+  renderLobby();
+  renderGame();
+});
 
-  if(!lobby) return;
+function renderLobby(){
 
-  isHost = lobby.host === auth.currentUser.uid;
-
-  document.getElementById("lobbyName").innerText = lobby.name;
-
-  // players
   playersUI.innerHTML="";
-  lobby.players.forEach(p=>{
+  lobbyData.players.forEach(p=>{
     const li=document.createElement("li");
-    li.textContent=p.username + (p.uid===auth.currentUser.uid?" (jij)":"");
+    li.textContent=p.username;
     playersUI.appendChild(li);
   });
 
-  // host only
-  startBtn.style.display = isHost ? "block" : "none";
+  startBtn.style.display =
+    lobbyData.host === auth.currentUser.uid ? "block":"none";
+}
 
-  // game state
-  if(lobby.status === "playing"){
-    gameUI.style.display="block";
-    startBtn.style.display="none";
-
-    const current = lobby.players[lobby.turnIndex];
-    document.getElementById("turn").innerText =
-      current.username + " is aan de beurt!";
-  } else {
-    gameUI.style.display="none";
-  }
-
+// HOST START GAME
+startBtn.onclick = ()=> updateDoc(ref,{
+  status:"playing",
+  "gameState.phase":"choose"
 });
 
-// ▶ start game
-startBtn.onclick = async () => {
-  await updateDoc(ref,{
-    status:"playing"
+// GAME RENDER
+function renderGame(){
+
+  if(lobbyData.status !== "playing") return;
+
+  gameUI.style.display="block";
+
+  const phase = lobbyData.gameState.phase;
+
+  if(phase==="choose") showChoose();
+  if(phase==="truth_pick") showPick();
+  if(phase==="truth_answer") showAnswer();
+  if(phase==="truth_result") showResult();
+}
+
+// WAARHEID KLIK
+document.getElementById("truth").onclick=()=>{
+  updateDoc(ref,{ "gameState.phase":"truth_pick" });
+};
+
+function showChoose(){}
+
+function showPick(){
+
+  const q1 = TRUTH[Math.floor(Math.random()*TRUTH.length)];
+  const q2 = TRUTH[Math.floor(Math.random()*TRUTH.length)];
+
+  random1.innerText=q1;
+  random2.innerText=q2;
+
+  random1.onclick=()=>sendQuestion(q1);
+  random2.onclick=()=>sendQuestion(q2);
+}
+
+function sendQuestion(q){
+  updateDoc(ref,{
+    "gameState.phase":"truth_answer",
+    "gameState.currentQuestion":q
+  });
+}
+
+sendAnswer.onclick=()=>{
+  updateDoc(ref,{
+    "gameState.phase":"truth_result",
+    "gameState.currentAnswer":answerInput.value
+  });
+};
+
+continueBtn.onclick=()=>{
+
+  let next=lobbyData.turnIndex+1;
+  if(next>=lobbyData.players.length) next=0;
+
+  updateDoc(ref,{
+    turnIndex:next,
+    "gameState.phase":"choose",
+    "gameState.currentAnswer":"",
+    "gameState.currentQuestion":""
   });
 };
