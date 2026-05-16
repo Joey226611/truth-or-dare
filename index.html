@@ -12,164 +12,142 @@ body{
     color:white;
     padding:40px;
 }
-
-/* HEADER */
 h1{text-align:center;margin-bottom:30px}
 
-/* TOPBAR */
 .topbar{
     backdrop-filter: blur(20px);
     background: rgba(255,255,255,0.08);
-    padding:15px;
-    border-radius:20px;
-    box-shadow:0 10px 40px rgba(0,0,0,0.4);
+    padding:15px;border-radius:20px;
     display:flex;justify-content:center;flex-wrap:wrap;
 }
-input,select,button{
-    padding:10px 14px;margin:6px;border:none;border-radius:14px;
+
+input,button,textarea{
+    padding:10px;border:none;border-radius:14px;margin:6px;
 }
-input,select{background:rgba(255,255,255,0.15);color:white}
 button{
     background:linear-gradient(135deg,#00e0ff,#4c7dff);
-    color:white;font-weight:600;cursor:pointer;transition:.3s;
+    color:white;cursor:pointer;
 }
-button:hover{transform:scale(1.05);box-shadow:0 0 15px #00e0ff}
+.deleteBtn{background:linear-gradient(135deg,#ff4d6d,#ff1e56)}
 
-/* GRID */
 #lists{display:flex;flex-wrap:wrap;gap:30px;margin-top:40px;justify-content:center}
 
-/* CARDS */
 .list{
     width:270px;padding:20px;
     backdrop-filter: blur(25px);
     background: rgba(255,255,255,0.08);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15),
-                0 15px 40px rgba(0,0,0,0.5);
     border-radius:30px;
 }
 
-/* PROGRESS BAR */
-.progress{
-    height:8px;background:rgba(255,255,255,0.15);
-    border-radius:10px;margin:10px 0;
-}
-.progressFill{
-    height:100%;border-radius:10px;
-    background:linear-gradient(90deg,#00e0ff,#4c7dff);
-    width:0%;
-}
+.progress{height:8px;background:#ffffff22;border-radius:10px;margin:10px 0}
+.progressFill{height:100%;background:linear-gradient(90deg,#00e0ff,#4c7dff);border-radius:10px}
 
-/* ITEMS */
-.item{
-    margin-top:12px;padding:10px;border-radius:15px;
-    background:rgba(255,255,255,0.12);
-}
+.item{background:#ffffff22;padding:10px;border-radius:15px;margin-top:12px}
 
-/* CUSTOM CHECKBOX */
 .check{
-    appearance:none;
-    width:18px;height:18px;
-    border:2px solid #00e0ff;
-    border-radius:5px;
-    cursor:pointer;margin-right:6px;
-    position:relative;
+    appearance:none;width:18px;height:18px;
+    border:2px solid #00e0ff;border-radius:5px;margin-right:6px;
 }
-.check:checked{
-    background:#00e0ff;
-    box-shadow:0 0 10px #00e0ff;
-}
-.check:checked::after{
-    content:"✓";
-    position:absolute;
-    color:black;font-weight:bold;
-    left:3px;top:-2px;
-}
+.check:checked{background:#00e0ff;box-shadow:0 0 10px #00e0ff}
+.check:checked::after{content:"✓";color:black;font-weight:bold}
 
-textarea{
-    width:100%;height:45px;margin-top:5px;
-    border:none;border-radius:10px;
-    background:rgba(255,255,255,0.2);
-    color:white;padding:6px;
-}
+textarea{width:100%;height:45px;margin-top:5px;background:#ffffff22;color:white}
 
-/* POPUP */
-.popupBg{
-    position:fixed;inset:0;
-    background:rgba(0,0,0,0.6);
-    display:none;align-items:center;justify-content:center;
-}
-.popup{
-    background:#0f172a;
-    padding:20px;border-radius:20px;
-    box-shadow:0 0 40px #00e0ff55;
-}
+.popupBg{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center}
+.popup{background:#0f172a;padding:20px;border-radius:20px}
+.smallBtn{font-size:12px;padding:5px 8px}
 </style>
 </head>
 
 <body>
 
 <h1>🚀 Futuristic Checklist</h1>
-
 <div class="topbar">
-<input id="listName" placeholder="Naam checklist">
-<button onclick="newListPopup()">➕ Add Checklist</button>
+<button onclick="newListPopup()">➕ New Checklist</button>
 </div>
 
 <div id="lists"></div>
 
-<!-- POPUP -->
 <div class="popupBg" id="popupBg">
-  <div class="popup" id="popup"></div>
+<div class="popup" id="popup"></div>
 </div>
 
 <script>
 let lists=JSON.parse(localStorage.getItem("checklists"))||[];
+let typingState=null;
+
 function save(){localStorage.setItem("checklists",JSON.stringify(lists));}
 
-/* POPUP SYSTEM */
-function popup(html){ 
-document.getElementById("popup").innerHTML=html;
-document.getElementById("popupBg").style.display="flex";
+/* ===== AUTO REFRESH MET TYPING SAVE ===== */
+function saveTypingState(){
+let el=document.activeElement;
+if(el.tagName==="TEXTAREA"){
+typingState={
+value:el.value,
+selectionStart:el.selectionStart,
+selectionEnd:el.selectionEnd,
+id:el.id
+}}
 }
-function closePopup(){document.getElementById("popupBg").style.display="none";}
+function restoreTypingState(){
+if(!typingState) return;
+let el=document.getElementById(typingState.id);
+if(!el) return;
+el.value=typingState.value;
+el.focus();
+el.setSelectionRange(typingState.selectionStart,typingState.selectionEnd);
+}
+setInterval(()=>{
+saveTypingState();
+lists=JSON.parse(localStorage.getItem("checklists"))||[];
+render();
+restoreTypingState();
+},60000);
 
-/* NEW LIST POPUP */
+/* ===== POPUP ===== */
+function popup(html){popupBg.style.display="flex";popup.innerHTML=html;}
+function closePopup(){popupBg.style.display="none";}
+
+/* ===== LIST FUNCTIES ===== */
 function newListPopup(){
-popup(`
-<h3>Nieuwe checklist</h3>
+popup(`<h3>Nieuwe checklist</h3>
 <input id="pName" placeholder="Naam"><br>
-<button onclick="createList()">Create</button>
-<button onclick="closePopup()">Cancel</button>
-`);
+<button onclick="createList()">Create</button>`);
 }
 function createList(){
 let name=document.getElementById("pName").value;
-if(!name)return;
-lists.push({name,items:[]});
+lists.push({name,items:[]}); save(); closePopup(); render();
+}
+function editList(i){
+popup(`<h3>Bewerk naam</h3>
+<input id="editName" value="${lists[i].name}">
+<button onclick="saveEdit(${i})">Save</button>`);
+}
+function saveEdit(i){
+lists[i].name=document.getElementById("editName").value;
 save(); closePopup(); render();
 }
+function deleteList(i){
+if(confirm("Delete checklist?")){
+lists.splice(i,1); save(); render();
+}}
 
-/* ITEMS */
+/* ===== ITEM FUNCTIES ===== */
 function addItem(i){
-popup(`
-<h3>Nieuw item</h3>
-<input id="itemText" placeholder="Wat checken?"><br>
-<button onclick="createItem(${i})">Add</button>
-`);
+popup(`<h3>Nieuw item</h3>
+<input id="itemText"><button onclick="createItem(${i})">Add</button>`);
 }
 function createItem(i){
 let t=document.getElementById("itemText").value;
 lists[i].items.push({text:t,note:"",done:false});
 save(); closePopup(); render();
 }
+function deleteItem(li,ii){lists[li].items.splice(ii,1); save(); render();}
+function toggleCheck(li,ii){lists[li].items[ii].done=!lists[li].items[ii].done; save(); render();}
 
-function toggleCheck(li,ii){
-lists[li].items[ii].done=!lists[li].items[ii].done;
-save(); render();
-}
-
-/* RENDER */
+/* ===== RENDER ===== */
 function render(){
+lists=JSON.parse(localStorage.getItem("checklists"))||[];
 let c=document.getElementById("lists"); c.innerHTML="";
 lists.forEach((list,i)=>{
 let done=list.items.filter(x=>x.done).length;
@@ -177,21 +155,24 @@ let percent=list.items.length?Math.round(done/list.items.length*100):0;
 
 let div=document.createElement("div");
 div.className="list";
-
 div.innerHTML=`
 <h3>${list.name}</h3>
 <div class="progress"><div class="progressFill" style="width:${percent}%"></div></div>
 ${percent}% klaar<br>
-<button onclick="addItem(${i})">+ Item</button>
+<button class="smallBtn" onclick="addItem(${i})">+Item</button>
+<button class="smallBtn" onclick="editList(${i})">Edit</button>
+<button class="smallBtn deleteBtn" onclick="deleteList(${i})">Delete</button>
 `;
 
 list.items.forEach((item,j)=>{
 let d=document.createElement("div");
 d.className="item";
+let id=`note_${i}_${j}`;
 d.innerHTML=`
 <input type="checkbox" class="check" ${item.done?"checked":""}
 onchange="toggleCheck(${i},${j})"> ${item.text}
-<textarea oninput="lists[${i}].items[${j}].note=this.value;save();">${item.note}</textarea>
+<textarea id="${id}" oninput="lists[${i}].items[${j}].note=this.value;save();">${item.note}</textarea>
+<button class="smallBtn deleteBtn" onclick="deleteItem(${i},${j})">Remove</button>
 `;
 div.appendChild(d);
 });
