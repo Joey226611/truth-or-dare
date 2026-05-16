@@ -6,119 +6,103 @@
 
 <style>
 *{box-sizing:border-box}
-
 body{
-    font-family: "Segoe UI", -apple-system, sans-serif;
+    font-family:"Segoe UI",-apple-system,sans-serif;
     background: radial-gradient(circle at top,#1a1a2e,#0f172a 70%);
     color:white;
     padding:40px;
 }
 
 /* HEADER */
-h1{
-    text-align:center;
-    font-weight:600;
-    letter-spacing:1px;
-    margin-bottom:30px;
-}
+h1{text-align:center;margin-bottom:30px}
 
-/* INPUT BAR */
+/* TOPBAR */
 .topbar{
     backdrop-filter: blur(20px);
     background: rgba(255,255,255,0.08);
     padding:15px;
     border-radius:20px;
     box-shadow:0 10px 40px rgba(0,0,0,0.4);
-    display:flex;
-    justify-content:center;
-    flex-wrap:wrap;
+    display:flex;justify-content:center;flex-wrap:wrap;
 }
-
 input,select,button{
-    padding:10px 14px;
-    margin:6px;
-    border:none;
-    border-radius:14px;
-    font-size:14px;
+    padding:10px 14px;margin:6px;border:none;border-radius:14px;
 }
-
-input,select{
-    background: rgba(255,255,255,0.15);
-    color:white;
-}
-
+input,select{background:rgba(255,255,255,0.15);color:white}
 button{
-    background: linear-gradient(135deg,#00e0ff,#4c7dff);
-    color:white;
-    font-weight:600;
-    cursor:pointer;
-    transition:.3s;
+    background:linear-gradient(135deg,#00e0ff,#4c7dff);
+    color:white;font-weight:600;cursor:pointer;transition:.3s;
 }
-button:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 15px #00e0ff;
-}
+button:hover{transform:scale(1.05);box-shadow:0 0 15px #00e0ff}
 
-/* LIST GRID */
-#lists{
-    display:flex;
-    flex-wrap:wrap;
-    gap:30px;
-    margin-top:40px;
-    justify-content:center;
-}
+/* GRID */
+#lists{display:flex;flex-wrap:wrap;gap:30px;margin-top:40px;justify-content:center}
 
-/* GLASS CARD */
+/* CARDS */
 .list{
-    width:270px;
-    padding:20px;
+    width:270px;padding:20px;
     backdrop-filter: blur(25px);
     background: rgba(255,255,255,0.08);
-    box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,0.15),
-        0 15px 40px rgba(0,0,0,0.5);
-    transition:.4s;
-}
-.list:hover{
-    transform: translateY(-8px) scale(1.03);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15),
+                0 15px 40px rgba(0,0,0,0.5);
+    border-radius:30px;
 }
 
-/* SHAPES */
-.square{border-radius:0}
-.rounded{border-radius:30px}
-.circle{border-radius:50%}
-.triangle{clip-path: polygon(50% 0%,0% 100%,100% 100%)}
+/* PROGRESS BAR */
+.progress{
+    height:8px;background:rgba(255,255,255,0.15);
+    border-radius:10px;margin:10px 0;
+}
+.progressFill{
+    height:100%;border-radius:10px;
+    background:linear-gradient(90deg,#00e0ff,#4c7dff);
+    width:0%;
+}
 
 /* ITEMS */
 .item{
-    margin-top:12px;
-    padding:10px;
-    border-radius:15px;
-    background: rgba(255,255,255,0.12);
-    backdrop-filter: blur(15px);
+    margin-top:12px;padding:10px;border-radius:15px;
+    background:rgba(255,255,255,0.12);
+}
+
+/* CUSTOM CHECKBOX */
+.check{
+    appearance:none;
+    width:18px;height:18px;
+    border:2px solid #00e0ff;
+    border-radius:5px;
+    cursor:pointer;margin-right:6px;
+    position:relative;
+}
+.check:checked{
+    background:#00e0ff;
+    box-shadow:0 0 10px #00e0ff;
+}
+.check:checked::after{
+    content:"✓";
+    position:absolute;
+    color:black;font-weight:bold;
+    left:3px;top:-2px;
 }
 
 textarea{
-    width:100%;
-    height:45px;
-    border:none;
-    border-radius:10px;
-    background: rgba(255,255,255,0.2);
-    color:white;
-    padding:6px;
-    margin-top:5px;
+    width:100%;height:45px;margin-top:5px;
+    border:none;border-radius:10px;
+    background:rgba(255,255,255,0.2);
+    color:white;padding:6px;
 }
 
-.smallBtn{
-    font-size:11px;
-    padding:5px 8px;
-    margin-top:6px;
+/* POPUP */
+.popupBg{
+    position:fixed;inset:0;
+    background:rgba(0,0,0,0.6);
+    display:none;align-items:center;justify-content:center;
 }
-
-.deleteBtn{
-    background: linear-gradient(135deg,#ff4d6d,#ff1e56);
+.popup{
+    background:#0f172a;
+    padding:20px;border-radius:20px;
+    box-shadow:0 0 40px #00e0ff55;
 }
-
 </style>
 </head>
 
@@ -128,81 +112,87 @@ textarea{
 
 <div class="topbar">
 <input id="listName" placeholder="Naam checklist">
-<select id="shape">
-<option value="rounded">Rounded</option>
-<option value="square">Square</option>
-<option value="circle">Circle</option>
-<option value="triangle">Triangle</option>
-</select>
-<input type="color" id="color">
-<button onclick="addList()">➕ Add</button>
+<button onclick="newListPopup()">➕ Add Checklist</button>
 </div>
 
 <div id="lists"></div>
 
-<script>
-let lists = JSON.parse(localStorage.getItem("checklists")) || [];
+<!-- POPUP -->
+<div class="popupBg" id="popupBg">
+  <div class="popup" id="popup"></div>
+</div>
 
+<script>
+let lists=JSON.parse(localStorage.getItem("checklists"))||[];
 function save(){localStorage.setItem("checklists",JSON.stringify(lists));}
 
-function addList(){
-let name=document.getElementById("listName").value;
-let shape=document.getElementById("shape").value;
-let color=document.getElementById("color").value;
-if(name==="")return alert("Naam?");
-lists.push({name,shape,color,items:[]});
-save(); render();
+/* POPUP SYSTEM */
+function popup(html){ 
+document.getElementById("popup").innerHTML=html;
+document.getElementById("popupBg").style.display="flex";
+}
+function closePopup(){document.getElementById("popupBg").style.display="none";}
+
+/* NEW LIST POPUP */
+function newListPopup(){
+popup(`
+<h3>Nieuwe checklist</h3>
+<input id="pName" placeholder="Naam"><br>
+<button onclick="createList()">Create</button>
+<button onclick="closePopup()">Cancel</button>
+`);
+}
+function createList(){
+let name=document.getElementById("pName").value;
+if(!name)return;
+lists.push({name,items:[]});
+save(); closePopup(); render();
 }
 
-function editList(i){
-let n=prompt("Nieuwe naam:",lists[i].name);
-if(n){lists[i].name=n; save(); render();}
-}
-function deleteList(i){
-if(confirm("Delete?")){lists.splice(i,1); save(); render();}
-}
-
+/* ITEMS */
 function addItem(i){
-let t=prompt("Wat checken?");
-if(!t)return;
+popup(`
+<h3>Nieuw item</h3>
+<input id="itemText" placeholder="Wat checken?"><br>
+<button onclick="createItem(${i})">Add</button>
+`);
+}
+function createItem(i){
+let t=document.getElementById("itemText").value;
 lists[i].items.push({text:t,note:"",done:false});
-save(); render();
-}
-function deleteItem(li,ii){
-lists[li].items.splice(ii,1); save(); render();
-}
-function toggleCheck(li,ii){
-lists[li].items[ii].done=!lists[li].items[ii].done; save();
-}
-function updateNote(li,ii,val){
-lists[li].items[ii].note=val; save();
+save(); closePopup(); render();
 }
 
+function toggleCheck(li,ii){
+lists[li].items[ii].done=!lists[li].items[ii].done;
+save(); render();
+}
+
+/* RENDER */
 function render(){
 let c=document.getElementById("lists"); c.innerHTML="";
 lists.forEach((list,i)=>{
+let done=list.items.filter(x=>x.done).length;
+let percent=list.items.length?Math.round(done/list.items.length*100):0;
+
 let div=document.createElement("div");
-div.className="list "+list.shape;
-div.style.border="1px solid "+list.color;
-div.style.boxShadow="0 0 25px "+list.color+"55";
+div.className="list";
 
 div.innerHTML=`
 <h3>${list.name}</h3>
-<button class="smallBtn" onclick="addItem(${i})">+Item</button>
-<button class="smallBtn" onclick="editList(${i})">Edit</button>
-<button class="smallBtn deleteBtn" onclick="deleteList(${i})">Delete</button>
+<div class="progress"><div class="progressFill" style="width:${percent}%"></div></div>
+${percent}% klaar<br>
+<button onclick="addItem(${i})">+ Item</button>
 `;
 
 list.items.forEach((item,j)=>{
 let d=document.createElement("div");
 d.className="item";
 d.innerHTML=`
-<input type="checkbox" ${item.done?"checked":""}
+<input type="checkbox" class="check" ${item.done?"checked":""}
 onchange="toggleCheck(${i},${j})"> ${item.text}
-<textarea placeholder="Opmerking..."
-oninput="updateNote(${i},${j},this.value)">${item.note}</textarea>
-<button class="smallBtn deleteBtn"
-onclick="deleteItem(${i},${j})">Remove</button>`;
+<textarea oninput="lists[${i}].items[${j}].note=this.value;save();">${item.note}</textarea>
+`;
 div.appendChild(d);
 });
 
