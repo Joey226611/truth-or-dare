@@ -11,8 +11,7 @@ body{
     color:white;
     padding:30px;
 }
-
-h1{ text-align:center; }
+h1{text-align:center;}
 
 input,select,button,textarea{
     padding:8px;
@@ -35,7 +34,6 @@ button{
     margin-top:30px;
 }
 
-/* checklist blok */
 .list{
     padding:15px;
     width:260px;
@@ -46,9 +44,7 @@ button{
 .square{border-radius:0}
 .rounded{border-radius:20px}
 .circle{border-radius:50%}
-.triangle{
-    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-}
+.triangle{clip-path: polygon(50% 0%, 0% 100%, 100% 100%);}
 
 .item{
     background:rgba(255,255,255,0.15);
@@ -57,19 +53,10 @@ button{
     border-radius:8px;
 }
 
-textarea{
-    width:90%;
-    height:40px;
-}
+textarea{width:90%;height:40px;}
 
-.deleteBtn{
-    background:#ff4d4d;
-}
-
-.smallBtn{
-    padding:4px 6px;
-    font-size:12px;
-}
+.deleteBtn{background:#ff4d4d;}
+.smallBtn{padding:4px 6px;font-size:12px;}
 </style>
 </head>
 
@@ -77,7 +64,6 @@ textarea{
 
 <h1>✔️ Modern Checklist Maker</h1>
 
-<!-- nieuwe checklist -->
 <input id="listName" placeholder="Naam checklist">
 <select id="shape">
   <option value="square">Square</option>
@@ -91,44 +77,59 @@ textarea{
 <div id="lists"></div>
 
 <script>
-let lists = [];
+let lists = JSON.parse(localStorage.getItem("checklists")) || [];
+
+function save(){
+    localStorage.setItem("checklists", JSON.stringify(lists));
+}
 
 function addList(){
     let name = document.getElementById("listName").value;
     let shape = document.getElementById("shape").value;
     let color = document.getElementById("color").value;
-
     if(name==="") return alert("Geef een naam!");
 
-    let list = {name, shape, color, items:[]};
-    lists.push(list);
+    lists.push({name, shape, color, items:[]});
+    save();
     render();
+}
+
+function editList(index){
+    let newName = prompt("Nieuwe naam:", lists[index].name);
+    if(newName){
+        lists[index].name = newName;
+        save(); render();
+    }
+}
+
+function deleteList(index){
+    if(confirm("Checklist verwijderen?")){
+        lists.splice(index,1);
+        save(); render();
+    }
 }
 
 function addItem(index){
     let text = prompt("Wat wil je checken?");
     if(!text) return;
     lists[index].items.push({text, note:"", done:false});
-    render();
-}
-
-function deleteList(index){
-    lists.splice(index,1);
-    render();
+    save(); render();
 }
 
 function deleteItem(listIndex,itemIndex){
     lists[listIndex].items.splice(itemIndex,1);
-    render();
+    save(); render();
 }
 
 function toggleCheck(listIndex,itemIndex){
     lists[listIndex].items[itemIndex].done =
     !lists[listIndex].items[itemIndex].done;
+    save();
 }
 
 function updateNote(listIndex,itemIndex,val){
     lists[listIndex].items[itemIndex].note = val;
+    save();
 }
 
 function render(){
@@ -143,6 +144,7 @@ function render(){
         div.innerHTML = `
         <h3>${list.name}</h3>
         <button class="smallBtn" onclick="addItem(${i})">+ Item</button>
+        <button class="smallBtn" onclick="editList(${i})">Edit</button>
         <button class="deleteBtn smallBtn" onclick="deleteList(${i})">Delete</button>
         `;
 
@@ -167,6 +169,8 @@ function render(){
         container.appendChild(div);
     });
 }
+
+render();
 </script>
 
 </body>
