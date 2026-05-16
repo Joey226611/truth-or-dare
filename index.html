@@ -9,8 +9,7 @@
 body{
     font-family:"Segoe UI",-apple-system,sans-serif;
     background: radial-gradient(circle at top,#1a1a2e,#0f172a 70%);
-    color:white;
-    padding:40px;
+    color:white;padding:40px;
 }
 h1{text-align:center;margin-bottom:30px}
 
@@ -18,15 +17,12 @@ h1{text-align:center;margin-bottom:30px}
     backdrop-filter: blur(20px);
     background: rgba(255,255,255,0.08);
     padding:15px;border-radius:20px;
-    display:flex;justify-content:center;flex-wrap:wrap;
-}
-
-input,button,textarea{
-    padding:10px;border:none;border-radius:14px;margin:6px;
+    display:flex;justify-content:center;
 }
 button{
+    padding:10px 16px;border:none;border-radius:14px;
     background:linear-gradient(135deg,#00e0ff,#4c7dff);
-    color:white;cursor:pointer;
+    color:white;cursor:pointer;font-weight:600;
 }
 .deleteBtn{background:linear-gradient(135deg,#ff4d6d,#ff1e56)}
 
@@ -45,23 +41,35 @@ button{
 .item{background:#ffffff22;padding:10px;border-radius:15px;margin-top:12px}
 
 .check{
-    appearance:none;width:18px;height:18px;
-    border:2px solid #00e0ff;border-radius:5px;margin-right:6px;
+appearance:none;width:18px;height:18px;border:2px solid #00e0ff;border-radius:5px;margin-right:6px;
 }
 .check:checked{background:#00e0ff;box-shadow:0 0 10px #00e0ff}
 .check:checked::after{content:"✓";color:black;font-weight:bold}
 
 textarea{width:100%;height:45px;margin-top:5px;background:#ffffff22;color:white}
 
-.popupBg{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center}
-.popup{background:#0f172a;padding:20px;border-radius:20px}
-.smallBtn{font-size:12px;padding:5px 8px}
+/* POPUP */
+.popupBg{
+position:fixed;inset:0;background:#0009;
+display:none;align-items:center;justify-content:center;
+}
+.popup{
+background:#0f172a;padding:25px;border-radius:25px;
+box-shadow:0 0 40px #00e0ff55;
+min-width:260px;text-align:center;
+}
+.popup input{
+width:100%;padding:10px;margin:10px 0;
+background:#ffffff22;border:none;border-radius:12px;color:white;
+}
+.smallBtn{font-size:12px;padding:6px 10px;margin:3px}
 </style>
 </head>
 
 <body>
 
 <h1>🚀 Futuristic Checklist</h1>
+
 <div class="topbar">
 <button onclick="newListPopup()">➕ New Checklist</button>
 </div>
@@ -69,33 +77,30 @@ textarea{width:100%;height:45px;margin-top:5px;background:#ffffff22;color:white}
 <div id="lists"></div>
 
 <div class="popupBg" id="popupBg">
-<div class="popup" id="popup"></div>
+   <div class="popup" id="popup"></div>
 </div>
 
 <script>
 let lists=JSON.parse(localStorage.getItem("checklists"))||[];
+let popupBg=document.getElementById("popupBg");
+let popup=document.getElementById("popup");
 let typingState=null;
 
 function save(){localStorage.setItem("checklists",JSON.stringify(lists));}
 
-/* ===== AUTO REFRESH MET TYPING SAVE ===== */
+/* AUTO REFRESH */
 function saveTypingState(){
 let el=document.activeElement;
 if(el.tagName==="TEXTAREA"){
-typingState={
-value:el.value,
-selectionStart:el.selectionStart,
-selectionEnd:el.selectionEnd,
-id:el.id
+typingState={value:el.value,start:el.selectionStart,end:el.selectionEnd,id:el.id};
 }}
-}
 function restoreTypingState(){
-if(!typingState) return;
+if(!typingState)return;
 let el=document.getElementById(typingState.id);
-if(!el) return;
+if(!el)return;
 el.value=typingState.value;
 el.focus();
-el.setSelectionRange(typingState.selectionStart,typingState.selectionEnd);
+el.setSelectionRange(typingState.start,typingState.end);
 }
 setInterval(()=>{
 saveTypingState();
@@ -104,38 +109,51 @@ render();
 restoreTypingState();
 },60000);
 
-/* ===== POPUP ===== */
-function popup(html){popupBg.style.display="flex";popup.innerHTML=html;}
+/* POPUP */
+function popupOpen(html){
+popup.innerHTML=html;
+popupBg.style.display="flex";
+}
 function closePopup(){popupBg.style.display="none";}
 
-/* ===== LIST FUNCTIES ===== */
+/* LIST FUNCTIES */
 function newListPopup(){
-popup(`<h3>Nieuwe checklist</h3>
-<input id="pName" placeholder="Naam"><br>
-<button onclick="createList()">Create</button>`);
+popupOpen(`
+<h3>Nieuwe Checklist</h3>
+<input id="pName" placeholder="Naam van checklist">
+<button onclick="createList()">Create</button>
+<button onclick="closePopup()">Cancel</button>
+`);
 }
 function createList(){
 let name=document.getElementById("pName").value;
-lists.push({name,items:[]}); save(); closePopup(); render();
+if(!name)return;
+lists.push({name,items:[]});
+save(); closePopup(); render();
 }
 function editList(i){
-popup(`<h3>Bewerk naam</h3>
+popupOpen(`
+<h3>Bewerk naam</h3>
 <input id="editName" value="${lists[i].name}">
-<button onclick="saveEdit(${i})">Save</button>`);
+<button onclick="saveEdit(${i})">Save</button>
+`);
 }
 function saveEdit(i){
 lists[i].name=document.getElementById("editName").value;
 save(); closePopup(); render();
 }
 function deleteList(i){
-if(confirm("Delete checklist?")){
+if(confirm("Checklist verwijderen?")){
 lists.splice(i,1); save(); render();
 }}
 
-/* ===== ITEM FUNCTIES ===== */
+/* ITEMS */
 function addItem(i){
-popup(`<h3>Nieuw item</h3>
-<input id="itemText"><button onclick="createItem(${i})">Add</button>`);
+popupOpen(`
+<h3>Nieuw item</h3>
+<input id="itemText" placeholder="Wat checken?">
+<button onclick="createItem(${i})">Add</button>
+`);
 }
 function createItem(i){
 let t=document.getElementById("itemText").value;
@@ -145,9 +163,8 @@ save(); closePopup(); render();
 function deleteItem(li,ii){lists[li].items.splice(ii,1); save(); render();}
 function toggleCheck(li,ii){lists[li].items[ii].done=!lists[li].items[ii].done; save(); render();}
 
-/* ===== RENDER ===== */
+/* RENDER */
 function render(){
-lists=JSON.parse(localStorage.getItem("checklists"))||[];
 let c=document.getElementById("lists"); c.innerHTML="";
 lists.forEach((list,i)=>{
 let done=list.items.filter(x=>x.done).length;
@@ -176,7 +193,6 @@ onchange="toggleCheck(${i},${j})"> ${item.text}
 `;
 div.appendChild(d);
 });
-
 c.appendChild(div);
 });
 }
