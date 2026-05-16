@@ -1,20 +1,173 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <title>Doen of Waarheid</title>
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<title>Modern Checklist App</title>
+
+<style>
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(135deg,#1e1e2f,#2e2e4f);
+    color:white;
+    padding:30px;
+}
+
+h1{ text-align:center; }
+
+input,select,button,textarea{
+    padding:8px;
+    margin:5px;
+    border:none;
+    border-radius:8px;
+}
+
+button{
+    cursor:pointer;
+    background:#4CAF50;
+    color:white;
+    font-weight:bold;
+}
+
+#lists{
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    margin-top:30px;
+}
+
+/* checklist blok */
+.list{
+    padding:15px;
+    width:260px;
+    transition:.3s;
+    position:relative;
+}
+
+.square{border-radius:0}
+.rounded{border-radius:20px}
+.circle{border-radius:50%}
+.triangle{
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.item{
+    background:rgba(255,255,255,0.15);
+    padding:8px;
+    margin-top:8px;
+    border-radius:8px;
+}
+
+textarea{
+    width:90%;
+    height:40px;
+}
+
+.deleteBtn{
+    background:#ff4d4d;
+}
+
+.smallBtn{
+    padding:4px 6px;
+    font-size:12px;
+}
+</style>
 </head>
-<body class="centerPage">
 
-  <div class="card big">
-    <h1>🎮 Doen of Waarheid</h1>
-    <p>Kies een gebruikersnaam</p>
+<body>
 
-    <input id="username" placeholder="Username">
-    <button id="startBtn" class="primary">Start</button>
-  </div>
+<h1>✔️ Modern Checklist Maker</h1>
 
-  <script type="module" src="js/auth.js"></script>
+<!-- nieuwe checklist -->
+<input id="listName" placeholder="Naam checklist">
+<select id="shape">
+  <option value="square">Square</option>
+  <option value="rounded">Rounded</option>
+  <option value="circle">Circle</option>
+  <option value="triangle">Triangle</option>
+</select>
+<input type="color" id="color">
+<button onclick="addList()">Toevoegen</button>
+
+<div id="lists"></div>
+
+<script>
+let lists = [];
+
+function addList(){
+    let name = document.getElementById("listName").value;
+    let shape = document.getElementById("shape").value;
+    let color = document.getElementById("color").value;
+
+    if(name==="") return alert("Geef een naam!");
+
+    let list = {name, shape, color, items:[]};
+    lists.push(list);
+    render();
+}
+
+function addItem(index){
+    let text = prompt("Wat wil je checken?");
+    if(!text) return;
+    lists[index].items.push({text, note:"", done:false});
+    render();
+}
+
+function deleteList(index){
+    lists.splice(index,1);
+    render();
+}
+
+function deleteItem(listIndex,itemIndex){
+    lists[listIndex].items.splice(itemIndex,1);
+    render();
+}
+
+function toggleCheck(listIndex,itemIndex){
+    lists[listIndex].items[itemIndex].done =
+    !lists[listIndex].items[itemIndex].done;
+}
+
+function updateNote(listIndex,itemIndex,val){
+    lists[listIndex].items[itemIndex].note = val;
+}
+
+function render(){
+    let container = document.getElementById("lists");
+    container.innerHTML="";
+
+    lists.forEach((list,i)=>{
+        let div = document.createElement("div");
+        div.className = "list " + list.shape;
+        div.style.background = list.color;
+
+        div.innerHTML = `
+        <h3>${list.name}</h3>
+        <button class="smallBtn" onclick="addItem(${i})">+ Item</button>
+        <button class="deleteBtn smallBtn" onclick="deleteList(${i})">Delete</button>
+        `;
+
+        list.items.forEach((item,j)=>{
+            let itemDiv = document.createElement("div");
+            itemDiv.className="item";
+
+            itemDiv.innerHTML=`
+            <input type="checkbox" ${item.done?"checked":""}
+             onchange="toggleCheck(${i},${j})">
+            ${item.text}
+            <br>
+            <textarea placeholder="Opmerking..."
+            oninput="updateNote(${i},${j},this.value)">${item.note}</textarea>
+            <br>
+            <button class="deleteBtn smallBtn"
+            onclick="deleteItem(${i},${j})">Remove</button>
+            `;
+            div.appendChild(itemDiv);
+        });
+
+        container.appendChild(div);
+    });
+}
+</script>
+
 </body>
 </html>
